@@ -295,6 +295,20 @@ class TestHyundaiSafetyCameraSCC(TestHyundaiSafety):
         self._rx(self._acc_state_msg(should_turn_acc_main_on))
         self.assertEqual(should_turn_acc_main_on, self.safety.get_acc_main_on())
 
+  def test_lfahda_mfc_8byte_param(self):
+    default_param = self.safety.get_current_safety_param()
+    self.assertTrue(self._tx(common.make_msg(0, 0x485, 4)))
+    self.assertFalse(self._tx(common.make_msg(0, 0x485, 8)))
+
+    try:
+      self.safety.set_safety_hooks(CarParams.SafetyModel.hyundai, HyundaiSafetyFlags.CAMERA_SCC | HyundaiSafetyFlags.LFAHDA_8BYTE)
+      self.safety.init_tests()
+      self.assertFalse(self._tx(common.make_msg(0, 0x485, 4)))
+      self.assertTrue(self._tx(common.make_msg(0, 0x485, 8)))
+    finally:
+      self.safety.set_safety_hooks(CarParams.SafetyModel.hyundai, default_param)
+      self.safety.init_tests()
+
 
 @parameterized_class(LDA_BUTTON)
 class TestHyundaiSafetyFCEV(TestHyundaiSafety):

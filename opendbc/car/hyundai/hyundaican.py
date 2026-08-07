@@ -125,11 +125,15 @@ def create_clu11(packer, frame, clu11, button, CP):
   return packer.make_can_msg("CLU11", bus, values)
 
 
-def create_lfahda_mfc(packer, enabled, lfa_icon):
+def create_lfahda_mfc(packer, enabled, lfa_icon, CP):
   values = {
     "LFA_Icon_State": lfa_icon,
   }
-  return packer.make_can_msg("LFAHDA_MFC", 0, values)
+  msg = packer.make_can_msg("LFAHDA_MFC", 0, values)
+  if CP.flags & HyundaiFlags.LFAHDA_8BYTE:
+    addr, dat, bus = msg
+    return addr, dat.ljust(8, b"\x00"), bus
+  return msg
 
 
 def create_acc_commands(packer, enabled, accel, upper_jerk, idx, lead_data: CanLeadData,
