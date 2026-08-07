@@ -309,7 +309,6 @@ class TestHyundaiSafetyCameraSCC(TestHyundaiSafety):
       self.safety.set_safety_hooks(CarParams.SafetyModel.hyundai, default_param)
       self.safety.init_tests()
 
-
   def test_lfahda_mfc_8byte_safety_paths(self):
     default_param = self.safety.get_current_safety_param()
     configs = (
