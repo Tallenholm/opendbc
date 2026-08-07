@@ -21,51 +21,39 @@ jobs:
           python - <<'PY'
           from pathlib import Path
 
-          path = Path('opendbc/safety/tests/test_hyundai.py')
+          path = Path("opendbc/safety/tests/test_hyundai.py")
           text = path.read_text()
-          old = '''    finally:
-              self.safety.set_safety_hooks(CarParams.SafetyModel.hyundai, default_param)
-              self.safety.init_tests()
+          anchor = "  def test_lfahda_mfc_8byte_param(self):"
+          marker = "\n\n@parameterized_class(LDA_BUTTON)\nclass TestHyundaiSafetyFCEV(TestHyundaiSafety):"
+          assert "def test_lfahda_mfc_8byte_safety_paths" not in text
+          anchor_pos = text.index(anchor)
+          marker_pos = text.index(marker, anchor_pos)
 
+          test = '''
 
-          @parameterized_class(LDA_BUTTON)
-          class TestHyundaiSafetyFCEV(TestHyundaiSafety):
-          '''
-          new = '''    finally:
-              self.safety.set_safety_hooks(CarParams.SafetyModel.hyundai, default_param)
-              self.safety.init_tests()
+  def test_lfahda_mfc_8byte_safety_paths(self):
+    default_param = self.safety.get_current_safety_param()
+    configs = (
+      (HyundaiSafetyFlags.LFAHDA_8BYTE, HyundaiSafetyFlagsSP.DEFAULT),
+      (HyundaiSafetyFlags.LONG | HyundaiSafetyFlags.LFAHDA_8BYTE, HyundaiSafetyFlagsSP.DEFAULT),
+      (HyundaiSafetyFlags.LONG | HyundaiSafetyFlags.CAMERA_SCC | HyundaiSafetyFlags.LFAHDA_8BYTE, HyundaiSafetyFlagsSP.DEFAULT),
+      (HyundaiSafetyFlags.LONG | HyundaiSafetyFlags.LFAHDA_8BYTE, HyundaiSafetyFlagsSP.ESCC),
+    )
 
-            def test_lfahda_mfc_8byte_safety_paths(self):
-              default_param = self.safety.get_current_safety_param()
-              configs = (
-                (HyundaiSafetyFlags.LFAHDA_8BYTE, HyundaiSafetyFlagsSP.DEFAULT),
-                (HyundaiSafetyFlags.LONG | HyundaiSafetyFlags.LFAHDA_8BYTE, HyundaiSafetyFlagsSP.DEFAULT),
-                (HyundaiSafetyFlags.LONG | HyundaiSafetyFlags.CAMERA_SCC | HyundaiSafetyFlags.LFAHDA_8BYTE, HyundaiSafetyFlagsSP.DEFAULT),
-                (HyundaiSafetyFlags.LONG | HyundaiSafetyFlags.LFAHDA_8BYTE, HyundaiSafetyFlagsSP.ESCC),
-              )
-
-              try:
-                for param, param_sp in configs:
-                  with self.subTest(param=param, param_sp=param_sp):
-                    self.safety.set_current_safety_param_sp(param_sp)
-                    self.safety.set_safety_hooks(CarParams.SafetyModel.hyundai, param)
-                    self.safety.init_tests()
-                    self.assertFalse(self._tx(common.make_msg(0, 0x485, 4)))
-                    self.assertTrue(self._tx(common.make_msg(0, 0x485, 8)))
-              finally:
-                self.safety.set_current_safety_param_sp(self.SAFETY_PARAM_SP)
-                self.safety.set_safety_hooks(CarParams.SafetyModel.hyundai, default_param)
-                self.safety.init_tests()
-
-
-          @parameterized_class(LDA_BUTTON)
-          class TestHyundaiSafetyFCEV(TestHyundaiSafety):
-          '''
-          # The strings above are indented for YAML readability; normalize them to source indentation.
-          old = '\n'.join(line[10:] if line.startswith('          ') else line for line in old.splitlines()) + '\n'
-          new = '\n'.join(line[10:] if line.startswith('          ') else line for line in new.splitlines()) + '\n'
-          assert text.count(old) == 1, f'expected insertion point once, found {text.count(old)}'
-          path.write_text(text.replace(old, new, 1))
+    try:
+      for param, param_sp in configs:
+        with self.subTest(param=param, param_sp=param_sp):
+          self.safety.set_current_safety_param_sp(param_sp)
+          self.safety.set_safety_hooks(CarParams.SafetyModel.hyundai, param)
+          self.safety.init_tests()
+          self.assertFalse(self._tx(common.make_msg(0, 0x485, 4)))
+          self.assertTrue(self._tx(common.make_msg(0, 0x485, 8)))
+    finally:
+      self.safety.set_current_safety_param_sp(self.SAFETY_PARAM_SP)
+      self.safety.set_safety_hooks(CarParams.SafetyModel.hyundai, default_param)
+      self.safety.init_tests()
+'''
+          path.write_text(text[:marker_pos] + test + text[marker_pos:])
           PY
 
       - name: Run dedicated safety suite with coverage
