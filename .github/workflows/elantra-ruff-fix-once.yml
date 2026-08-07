@@ -1,0 +1,43 @@
+name: Elantra Ruff fix once
+
+on:
+  push:
+    branches:
+      - elantra-2024-port-current
+
+permissions:
+  contents: write
+
+jobs:
+  fix-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Remove extra blank line
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path("opendbc/safety/tests/test_hyundai.py")
+          text = path.read_text()
+          old = "\n\n\n  def test_lfahda_mfc_8byte_safety_paths(self):"
+          new = "\n\n  def test_lfahda_mfc_8byte_safety_paths(self):"
+          assert text.count(old) == 1, f"expected one Ruff spacing issue, found {text.count(old)}"
+          path.write_text(text.replace(old, new, 1))
+          PY
+          git diff --check
+
+      - name: Run full opendbc test gate
+        run: ./test.sh
+
+      - name: Commit formatting fix
+        run: |
+          rm .github/workflows/elantra-ruff-fix-once.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          git commit -m "Hyundai Elantra 2024-25: fix safety test formatting"
+          git push origin HEAD:elantra-2024-port-current
