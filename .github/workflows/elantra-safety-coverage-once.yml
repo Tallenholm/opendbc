@@ -28,31 +28,30 @@ jobs:
           assert "def test_lfahda_mfc_8byte_safety_paths" not in text
           anchor_pos = text.index(anchor)
           marker_pos = text.index(marker, anchor_pos)
-
-          test = '''
-
-  def test_lfahda_mfc_8byte_safety_paths(self):
-    default_param = self.safety.get_current_safety_param()
-    configs = (
-      (HyundaiSafetyFlags.LFAHDA_8BYTE, HyundaiSafetyFlagsSP.DEFAULT),
-      (HyundaiSafetyFlags.LONG | HyundaiSafetyFlags.LFAHDA_8BYTE, HyundaiSafetyFlagsSP.DEFAULT),
-      (HyundaiSafetyFlags.LONG | HyundaiSafetyFlags.CAMERA_SCC | HyundaiSafetyFlags.LFAHDA_8BYTE, HyundaiSafetyFlagsSP.DEFAULT),
-      (HyundaiSafetyFlags.LONG | HyundaiSafetyFlags.LFAHDA_8BYTE, HyundaiSafetyFlagsSP.ESCC),
-    )
-
-    try:
-      for param, param_sp in configs:
-        with self.subTest(param=param, param_sp=param_sp):
-          self.safety.set_current_safety_param_sp(param_sp)
-          self.safety.set_safety_hooks(CarParams.SafetyModel.hyundai, param)
-          self.safety.init_tests()
-          self.assertFalse(self._tx(common.make_msg(0, 0x485, 4)))
-          self.assertTrue(self._tx(common.make_msg(0, 0x485, 8)))
-    finally:
-      self.safety.set_current_safety_param_sp(self.SAFETY_PARAM_SP)
-      self.safety.set_safety_hooks(CarParams.SafetyModel.hyundai, default_param)
-      self.safety.init_tests()
-'''
+          lines = [
+            "  def test_lfahda_mfc_8byte_safety_paths(self):",
+            "    default_param = self.safety.get_current_safety_param()",
+            "    configs = (",
+            "      (HyundaiSafetyFlags.LFAHDA_8BYTE, HyundaiSafetyFlagsSP.DEFAULT),",
+            "      (HyundaiSafetyFlags.LONG | HyundaiSafetyFlags.LFAHDA_8BYTE, HyundaiSafetyFlagsSP.DEFAULT),",
+            "      (HyundaiSafetyFlags.LONG | HyundaiSafetyFlags.CAMERA_SCC | HyundaiSafetyFlags.LFAHDA_8BYTE, HyundaiSafetyFlagsSP.DEFAULT),",
+            "      (HyundaiSafetyFlags.LONG | HyundaiSafetyFlags.LFAHDA_8BYTE, HyundaiSafetyFlagsSP.ESCC),",
+            "    )",
+            "",
+            "    try:",
+            "      for param, param_sp in configs:",
+            "        with self.subTest(param=param, param_sp=param_sp):",
+            "          self.safety.set_current_safety_param_sp(param_sp)",
+            "          self.safety.set_safety_hooks(CarParams.SafetyModel.hyundai, param)",
+            "          self.safety.init_tests()",
+            "          self.assertFalse(self._tx(common.make_msg(0, 0x485, 4)))",
+            "          self.assertTrue(self._tx(common.make_msg(0, 0x485, 8)))",
+            "    finally:",
+            "      self.safety.set_current_safety_param_sp(self.SAFETY_PARAM_SP)",
+            "      self.safety.set_safety_hooks(CarParams.SafetyModel.hyundai, default_param)",
+            "      self.safety.init_tests()",
+          ]
+          test = "\n\n" + "\n".join(lines) + "\n"
           path.write_text(text[:marker_pos] + test + text[marker_pos:])
           PY
 
